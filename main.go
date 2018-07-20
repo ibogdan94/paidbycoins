@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"io/ioutil"
 	"crypto/md5"
-	"encoding/hex"
 	"strings"
 	"encoding/json"
 	"os"
@@ -71,13 +70,13 @@ func (p PaidByCoins) GetPaymentStatus(paymentId int) ([]byte, error) {
 }
 
 func (p PaidByCoins) CreatePayment(invoice Invoice) ([]byte, error) {
-	jstonBytes, err := json.Marshal(invoice)
+	jsonBytes, err := json.Marshal(invoice)
 
 	if err != nil {
 		return nil, err
 	}
 
-	bytes, err := makeApiRequest(p, "POST", "/v1/cli/createpayment", string(jstonBytes))
+	bytes, err := makeApiRequest(p, "POST", "/v1/cli/createpayment", string(jsonBytes))
 
 	if err != nil {
 		return nil, err
@@ -91,8 +90,10 @@ func makeApiRequest(p PaidByCoins, method string, endpoint string, payload strin
 	Nonce := now.UnixNano()
 	timestamp := now.Format("20060102 15:04:05")
 
+	var base64Payload string
+
 	if payload != "" {
-		payload = computeMD5Hash(payload)
+		base64Payload = computeMD5Hash(payload)
 	}
 
 	signatureRawData := fmt.Sprintf(
@@ -102,16 +103,16 @@ func makeApiRequest(p PaidByCoins, method string, endpoint string, payload strin
 		p.BaseURL+endpoint,
 		timestamp,
 		Nonce,
-		payload,
+		base64Payload,
 	)
 
-	fmt.Printf("signatureRawData: %s \n", signatureRawData)
+	//fmt.Printf("signatureRawData: %s \n", signatureRawData)
 
 	requestSignatureBase64String := computeHmac256(p.APIKey, signatureRawData)
 
 	sign := fmt.Sprintf("%s||%s||%d||%s", p.MID, requestSignatureBase64String, Nonce, timestamp)
 
-	fmt.Printf("sign: %s \n", sign)
+	//fmt.Printf("sign: %s \n", sign)
 
 	req, err := http.NewRequest(method, p.BaseURL+endpoint, strings.NewReader(payload))
 
@@ -153,7 +154,7 @@ func computeMD5Hash(payload string) string {
 	h := md5.New()
 	h.Write([]byte(payload))
 
-	return hex.EncodeToString(h.Sum(nil))
+	return b64.StdEncoding.EncodeToString(h.Sum(nil))
 }
 
 var PaidByCoinsConfig = PaidByCoins{}
@@ -202,6 +203,8 @@ func main() {
 	//		"Australia",
 	//	},
 	//})
+
+	//resp, err := PaidByCoinsConfig.GetPaymentStatus(201807200266)
 
 	resp, err := PaidByCoinsConfig.GetRates()
 
