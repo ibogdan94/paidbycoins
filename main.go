@@ -157,7 +157,7 @@ func computeMD5Hash(payload string) string {
 	return b64.StdEncoding.EncodeToString(h.Sum(nil))
 }
 
-var PaidByCoinsConfig = PaidByCoins{}
+var PaidByCoinsClient = PaidByCoins{}
 
 func parseJSONConfig() {
 	pwd, err := os.Getwd()
@@ -172,7 +172,7 @@ func parseJSONConfig() {
 		panic(err)
 	}
 
-	if err := json.Unmarshal(payload, &PaidByCoinsConfig); err != nil {
+	if err := json.Unmarshal(payload, &PaidByCoinsClient); err != nil {
 		panic(err)
 	}
 }
@@ -183,7 +183,7 @@ func init() {
 
 
 func main() {
-	//resp, err := PaidByCoinsConfig.CreatePayment(Invoice{
+	//resp, err := PaidByCoinsClient.CreatePayment(Invoice{
 	//	"BTC",
 	//	"AUD",
 	//	234.0,
@@ -204,9 +204,9 @@ func main() {
 	//	},
 	//})
 
-	//resp, err := PaidByCoinsConfig.GetPaymentStatus(201807200266)
+	//resp, err := PaidByCoinsClient.GetPaymentStatus(201807200266)
 
-	resp, err := PaidByCoinsConfig.GetRates()
+	resp, err := PaidByCoinsClient.GetRates()
 
 	if err != nil {
 		panic(err)
