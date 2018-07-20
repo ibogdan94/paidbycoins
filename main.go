@@ -87,15 +87,16 @@ func (p PaidByCoins) CreatePayment(invoice Invoice) ([]byte, error) {
 }
 
 func makeApiRequest(p PaidByCoins, method string, endpoint string, payload string) ([]byte, error) {
-	Nonce := uuid()
-	timestamp := time.Now().Format("20060102 15:04:05")
+	now := time.Now()
+	Nonce := now.UnixNano()
+	timestamp := now.Format("20060102 15:04:05")
 
 	if payload != "" {
 		payload = computeMD5Hash(payload)
 	}
 
 	signatureRawData := fmt.Sprintf(
-		"%s%s%s%s%s%s",
+		"%s%s%s%s%d%s",
 		p.MID,
 		strings.ToUpper(method),
 		p.BaseURL+endpoint,
@@ -104,15 +105,13 @@ func makeApiRequest(p PaidByCoins, method string, endpoint string, payload strin
 		payload,
 	)
 
-	//fmt.Printf("signatureRawData: %s \n", signatureRawData)
+	fmt.Printf("signatureRawData: %s \n", signatureRawData)
 
 	requestSignatureBase64String := computeHmac256(p.APIKey, signatureRawData)
 
-	//fmt.Printf("requestSignatureBase64String: %s \n", requestSignatureBase64String)
+	sign := fmt.Sprintf("%s||%s||%d||%s", p.MID, requestSignatureBase64String, Nonce, timestamp)
 
-	sign := fmt.Sprintf("%s||%s||%s||%s", p.MID, requestSignatureBase64String, Nonce, timestamp)
-
-	//fmt.Printf("sign: %s \n", sign)
+	fmt.Printf("sign: %s \n", sign)
 
 	req, err := http.NewRequest(method, p.BaseURL+endpoint, strings.NewReader(payload))
 
@@ -140,21 +139,6 @@ func makeApiRequest(p PaidByCoins, method string, endpoint string, payload strin
 	}
 
 	return body, nil
-}
-
-func uuid() string {
-	f, err := os.Open("/dev/urandom")
-
-	if err != nil {
-		panic(err)
-	}
-
-	b := make([]byte, 16)
-	f.Read(b)
-	f.Close()
-	uuid := fmt.Sprintf("%x-%x-%x-%x-%x", b[0:4], b[4:6], b[6:8], b[8:10], b[10:])
-
-	return uuid
 }
 
 func computeHmac256(secret string, payload string) string {
@@ -227,3 +211,6 @@ func main() {
 
 	fmt.Println(string(resp))
 }
+
+//37D3F01E-8CE0-49D3-839B-CED9A7092780||vC2Ciqp/nmqapPeYYMBNUabB1yrdIGMIWOyKizzMjfM=||3a3344d5-159c-b70e-5037-52d579b28cec||20180720 14:18:08
+//37D3F01E-8CE0-49D3-839B-CED9A7092780||vC2Ciqp/nmqapPeYYMBNUabB1yrdIGMIWOyKizzMjfM=||3a3344d5-159c-b70e-5037-52d579b28cec||20180720 14:18:08
