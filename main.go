@@ -157,7 +157,7 @@ func computeMD5Hash(payload string) string {
 	return b64.StdEncoding.EncodeToString(h.Sum(nil))
 }
 
-var PaidByCoinsClient = PaidByCoins{}
+var PaidByCoinsClient PaidByCoins
 
 func parseJSONConfig() {
 	pwd, err := os.Getwd()
@@ -180,7 +180,6 @@ func parseJSONConfig() {
 func init() {
 	parseJSONConfig()
 }
-
 
 func main() {
 	//resp, err := PaidByCoinsClient.CreatePayment(Invoice{
