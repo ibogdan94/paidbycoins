@@ -8,7 +8,6 @@ import (
 	"crypto/hmac"
 	"net/http"
 	"io/ioutil"
-	"math/rand"
 	"crypto/md5"
 	"encoding/hex"
 	"strings"
@@ -88,35 +87,32 @@ func (p PaidByCoins) CreatePayment(invoice Invoice) ([]byte, error) {
 }
 
 func makeApiRequest(p PaidByCoins, method string, endpoint string, payload string) ([]byte, error) {
-	now := time.Now()
-	Nonce := now.UnixNano() + int64(rand.Intn(1000))
-	timestamp := now.Format("20060102 15:04:05")
+	Nonce := uuid()
+	timestamp := time.Now().Format("20060102 15:04:05")
 
-	//can be empty or json string
 	if payload != "" {
 		payload = computeMD5Hash(payload)
 	}
 
 	signatureRawData := fmt.Sprintf(
-		"%s%s%s%s%d%s",
+		"%s%s%s%s%s%s",
 		p.MID,
-		method,
+		strings.ToUpper(method),
 		p.BaseURL+endpoint,
 		timestamp,
 		Nonce,
 		payload,
 	)
 
-	fmt.Printf("signatureRawData: %s \n", signatureRawData)
+	//fmt.Printf("signatureRawData: %s \n", signatureRawData)
 
 	requestSignatureBase64String := computeHmac256(p.APIKey, signatureRawData)
 
-	fmt.Printf("requestSignatureBase64String: %s \n", requestSignatureBase64String)
+	//fmt.Printf("requestSignatureBase64String: %s \n", requestSignatureBase64String)
 
-	//PBCX header format: pbcx = <MerchantID>||<RequestSignatureBase64String>||<Nonce>||<Timestamp>
-	sign := fmt.Sprintf("%s||%s||%d||%s", p.MID, requestSignatureBase64String, Nonce, timestamp)
+	sign := fmt.Sprintf("%s||%s||%s||%s", p.MID, requestSignatureBase64String, Nonce, timestamp)
 
-	fmt.Printf("sign: %s \n", sign)
+	//fmt.Printf("sign: %s \n", sign)
 
 	req, err := http.NewRequest(method, p.BaseURL+endpoint, strings.NewReader(payload))
 
@@ -146,8 +142,23 @@ func makeApiRequest(p PaidByCoins, method string, endpoint string, payload strin
 	return body, nil
 }
 
+func uuid() string {
+	f, err := os.Open("/dev/urandom")
+
+	if err != nil {
+		panic(err)
+	}
+
+	b := make([]byte, 16)
+	f.Read(b)
+	f.Close()
+	uuid := fmt.Sprintf("%x-%x-%x-%x-%x", b[0:4], b[4:6], b[6:8], b[8:10], b[10:])
+
+	return uuid
+}
+
 func computeHmac256(secret string, payload string) string {
-	key := []byte(secret)
+	key, _ := b64.StdEncoding.DecodeString(secret)
 	h := hmac.New(sha256.New, key)
 	h.Write([]byte(payload))
 
