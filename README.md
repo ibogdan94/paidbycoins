@@ -1,6 +1,6 @@
-### Basic implementation of "Paid By Coins" API written using standard Go v1.9 library
+# Basic implementation of "Paid By Coins" API written by standard Go v1.9 library
 
-### Example of usage
+## Example of usage
 
 ```go
 package main
