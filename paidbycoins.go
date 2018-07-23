@@ -10,6 +10,7 @@ import (
 	"crypto/md5"
 	"strings"
 	"encoding/json"
+	"io/ioutil"
 )
 
 type Invoice struct {
@@ -37,9 +38,14 @@ type CustomerDetails struct {
 
 type PaidByCoinsApiCaller interface {
 	GenerateNonce() int64
-	GetRates() (*http.Response, error)
-	GetPaymentStatus(paymentId int) (*http.Response, error)
-	CreatePayment(invoice Invoice) (*http.Response, error)
+	GetRates() (*Response, error)
+	GetPaymentStatus(paymentId int) (*Response, error)
+	CreatePayment(invoice Invoice) (*Response, error)
+}
+
+type Response struct {
+	StatusCode int
+	Body string
 }
 
 type PaidByCoins struct {
@@ -52,15 +58,15 @@ func (p PaidByCoins) GenerateNonce() int64 {
 	return time.Now().UnixNano()
 }
 
-func (p PaidByCoins) GetRates() (*http.Response, error) {
+func (p PaidByCoins) GetRates() (*Response, error) {
 	return makeApiRequest(p, "GET", "/v1/cli/rates", "")
 }
 
-func (p PaidByCoins) GetPaymentStatus(paymentId int) (*http.Response, error) {
+func (p PaidByCoins) GetPaymentStatus(paymentId int) (*Response, error) {
 	return makeApiRequest(p, "GET", fmt.Sprintf("/v1/cli/status/%d", paymentId), "")
 }
 
-func (p PaidByCoins) CreatePayment(invoice Invoice) (*http.Response, error) {
+func (p PaidByCoins) CreatePayment(invoice Invoice) (*Response, error) {
 	jsonBytes, err := json.Marshal(invoice)
 
 	if err != nil {
@@ -70,7 +76,7 @@ func (p PaidByCoins) CreatePayment(invoice Invoice) (*http.Response, error) {
 	return makeApiRequest(p, "POST", "/v1/cli/createpayment", string(jsonBytes))
 }
 
-func makeApiRequest(p PaidByCoins, method string, endpoint string, payload string) (*http.Response, error) {
+func makeApiRequest(p PaidByCoins, method string, endpoint string, payload string) (*Response, error) {
 	now := time.Now()
 	timestamp := now.Format("20060102 15:04:05")
 
@@ -117,11 +123,13 @@ func makeApiRequest(p PaidByCoins, method string, endpoint string, payload strin
 
 	defer resp.Body.Close()
 
+	body, err := ioutil.ReadAll(resp.Body)
+
 	if err != nil {
 		return nil, err
 	}
 
-	return resp, nil
+	return &Response{resp.StatusCode, string(body)}, nil
 }
 
 func computeHmac256(secret string, payload string) []byte {
