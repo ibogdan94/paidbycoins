@@ -77,6 +77,7 @@ func (p PaidByCoins) CreatePayment(invoice Invoice) (*Response, error) {
 }
 
 func makeApiRequest(p PaidByCoins, method string, endpoint string, payload string) (*Response, error) {
+	nonce := p.GenerateNonce()
 	now := time.Now()
 	timestamp := now.Format("20060102 15:04:05")
 
@@ -92,7 +93,7 @@ func makeApiRequest(p PaidByCoins, method string, endpoint string, payload strin
 		strings.ToUpper(method),
 		p.BaseURL+endpoint,
 		timestamp,
-		p.GenerateNonce(),
+		nonce,
 		base64Payload,
 	)
 
@@ -100,7 +101,7 @@ func makeApiRequest(p PaidByCoins, method string, endpoint string, payload strin
 
 	requestSignatureBase64String := b64.StdEncoding.EncodeToString(computeHmac256(p.APIKey, signatureRawData))
 
-	sign := fmt.Sprintf("%s||%s||%d||%s", p.MID, requestSignatureBase64String, p.GenerateNonce(), timestamp)
+	sign := fmt.Sprintf("%s||%s||%d||%s", p.MID, requestSignatureBase64String, nonce, timestamp)
 
 	//fmt.Printf("sign: %s \n", sign)
 
