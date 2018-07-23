@@ -39,12 +39,12 @@ func init() {
 
 
 func main() {
-	//resp, err := PaidByCoinsClient.CreatePayment(Invoice{
+	//resp, err := PaidByCoinsClient.CreatePayment(pbc.Invoice{
 	//	"BTC",
 	//	"AUD",
 	//	234.0,
 	//	"test description",
-	//	CustomerDetails{
+	//	pbc.CustomerDetails{
 	//		"user@gmail.com",
 	//		"9876543210",
 	//		"Full Name",
