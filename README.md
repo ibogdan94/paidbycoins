@@ -68,9 +68,11 @@ func main() {
 		panic(err)
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
-
-
-	fmt.Println(string(body))
+    //error here 
+	//if resp.Message != nil {
+	    //fmt.Println(resp.Message)
+	//} 
+	
+	fmt.Println(resp.Data)
 }
 ```
