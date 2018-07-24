@@ -45,7 +45,9 @@ type PaidByCoinsApiCaller interface {
 
 type Response struct {
 	StatusCode int
-	Body string
+	Status string
+	Message *string
+	Data interface{}
 }
 
 type PaidByCoins struct {
@@ -97,13 +99,9 @@ func makeApiRequest(p PaidByCoins, method string, endpoint string, payload strin
 		base64Payload,
 	)
 
-	//fmt.Printf("signatureRawData: %s \n", signatureRawData)
-
 	requestSignatureBase64String := b64.StdEncoding.EncodeToString(computeHmac256(p.APIKey, signatureRawData))
 
 	sign := fmt.Sprintf("%s||%s||%d||%s", p.MID, requestSignatureBase64String, nonce, timestamp)
-
-	//fmt.Printf("sign: %s \n", sign)
 
 	req, err := http.NewRequest(method, p.BaseURL+endpoint, strings.NewReader(payload))
 
@@ -130,7 +128,17 @@ func makeApiRequest(p PaidByCoins, method string, endpoint string, payload strin
 		return nil, err
 	}
 
-	return &Response{resp.StatusCode, string(body)}, nil
+	var srvResp Response
+
+	err = json.Unmarshal(body, &srvResp)
+
+	if err != nil {
+		return nil, err
+	}
+
+	srvResp.StatusCode = resp.StatusCode
+
+	return &srvResp, nil
 }
 
 func computeHmac256(secret string, payload string) []byte {
